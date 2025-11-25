@@ -4,7 +4,6 @@
 
 
 // 부저 제어 함수
-// ---------------------------
 void initBuzzer()
 {
     if (softToneCreate(SPKR) != 0)
@@ -27,8 +26,3 @@ void stopBuzzer()
     softToneWrite(SPKR, 0);
 }
 
-// int main( ) { 
-//     wiringPiSetup( );
-//     playBuzzer( ); /* 음악 연주를 위한 함수 호출 */ 
-//     return 0;
-// }

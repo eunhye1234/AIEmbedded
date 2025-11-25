@@ -1,16 +1,10 @@
 #ifndef MCP3208_HPP
 #define MCP3208_HPP
 
-// #include <wiringPi.h>
-// #include <wiringPiSPI.h>
-
-// constexpr int SPI_CHANNEL = 0;      // SPI0
-// constexpr int SPI_SPEED   = 1000000; // 1 MHz
-// constexpr int CS_MCP3208  = 10;       // GPIO8 (WiringPi 기준)
 
 
-constexpr float V_MIN_CALIBRATED = 1.7f; // 예시 값 (0%)
-constexpr float V_MAX_CALIBRATED = 2.2f; // 예시 값 (100%)
+constexpr float V_MIN_CALIBRATED = 1.7f; 
+constexpr float V_MAX_CALIBRATED = 2.2f; 
 
 class MCP3208{
     public:
@@ -30,10 +24,6 @@ class MCP3208{
     private:
         int spi_channel_;
         int cs_pin_;
-
-        // const float ttc_danger_;
-        // const float ttc_safe_;
-        // const float ttc_range_;
 
         float throttle_raw_ = 0.0f;
         float throttle_cmd_ = 0.0f;

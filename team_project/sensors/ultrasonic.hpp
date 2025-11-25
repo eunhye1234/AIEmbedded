@@ -10,9 +10,6 @@
 #define ULTRASONIC_H
 
 
-
-
-
 class Ultrasonic{
 public:
     Ultrasonic(int trig_pin, int echo_pin);
@@ -33,8 +30,6 @@ private:
 
     float dtSeconds(unsigned long now, unsigned long prev);
 
-
-    //-------------
     float vrel_min = 9999.0f;
     float vrel_max = -9999.0f;
     float vrel_avg = 0.0f;

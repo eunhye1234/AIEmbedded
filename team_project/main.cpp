@@ -23,15 +23,14 @@ constexpr float HALL_THRESHOLD = 1.9;
 constexpr int TRIG = 29;  // GPIO 21 (물리 핀 40)
 constexpr int ECHO = 28;  // GPIO 20 (물리 핀 38)
 
-// === ΔDistance 평균 계산용 ===
 constexpr int DELTA_WINDOW = 10;   // 최근 10개로 평균
 std::vector<float> delta_buffer(DELTA_WINDOW, 0.0f);
 int delta_index = 0;
-float prev_distance = -1;   // 초기: 이전 데이터 없음
+float prev_distance = -1;   
 
 int main()
 {
-    std::cout << "HC-SR04 Ultra-sonic distance measure program" << std::endl;
+    std::cout << "Measurement start" << std::endl;
     
     // wiringPi 초기화
     if (wiringPiSetup() == -1)
@@ -47,18 +46,13 @@ int main()
         return EXIT_FAILURE;
     }
 
-    // 2. MCP3208 객체 생성 (이때 SPI와 CS핀이 설정됨)
     MCP3208 hall(SPI_CHANNEL, SPI_SPEED, CS_MCP3208);
     Ultrasonic ultra(TRIG, ECHO);
     initBuzzer();
     LCD lcd(0x27);
 
-    std::cout << "SS49E 센서 전압을 읽기 시작합니다..." << std::endl;
-
-    // CSV 로그 파일 준비
     std::ofstream logFile("log.csv", std::ios::out);
 
-    // CSV에 scenario 컬럼 추가
     if (logFile.tellp() == 0) {
        logFile << "distance_cm,ttc,v_rel,voltage,raw_percent,cmd_percent,delta_thr_raw,scenario,accel_detected,brake_detected,misop_flag\n";
    }
@@ -69,7 +63,7 @@ int main()
     unsigned long lockout_start_time = 0; // 0이면 잠금 아님, 0보다 크면 잠금 시작 시간
     const unsigned long LOCKOUT_DURATION_MS = 3000; // 3초 (3000 ms)
 
-    // ---- 루프 시작하기 전에 입력 ----
+    // ---- 시나리오 입력
     int scenario_id;
     std::cout << "Enter scenario ID (0=normal, 1=slow, 2=fast, 3=stomp ...): ";
     std::cin >> scenario_id;
@@ -79,20 +73,16 @@ int main()
     {
         int misop_flag = 0;
 
-        std::cout << "run-2" << std::endl;
         float vrel_avg = ultra.getVrelAvg();
         float vrel_min = ultra.getVrelMin();
         float vrel_max = ultra.getVrelMax();
 
-        std::cout << "run-1" << std::endl;
         unsigned long current_time = millis(); // wiringPi의 ms 타이머
-        std::cout << "run0" << std::endl;
         float distance = ultra.getDistance();
         float ttc = ultra.computeTTC(distance);
 
         // ------------------------------
         // ΔDistance 계산
-        // ------------------------------
         float delta = 0.0f;
         if (prev_distance > 0) {
             delta = std::fabs(distance - prev_distance);
@@ -107,21 +97,14 @@ int main()
         float delta_sum = 0;
         for (float d : delta_buffer) delta_sum += d;
         float delta_avg = delta_sum / DELTA_WINDOW;
-        // //-------------------------------------
+        //-------------------------------------
 
-        std::cout << "run1" << std::endl;
         float voltage = hall.readRawThrottle(0); 
         float thr_raw = std::max(0.0f, (voltage - V_MIN) / (V_MAX - V_MIN) * 100);
 
         float delta_thr_raw = thr_raw - prev_thr_raw;
-        // if (delta_thr_raw<0) delta_thr_raw = -delta_thr_raw;
-        
-
-        // float cap = hall.computeCap(ttc);
         float thr_cmd = thr_raw; 
 
-
-        std::cout << "run2" << std::endl;
 
         bool accel_detected = false;
         bool brake_detected = false;
@@ -159,9 +142,9 @@ int main()
             std::system("rm /tmp/accel_detected.flag");
 
         }
-        // ==================== [수정] 오조작 감지 및 3초 잠금 로직 =====================
+        // ==================== 오조작 감지 및 3초 잠금 로직 =====================
 
-        // 1. 현재 "잠금" 상태인지 확인
+        // 1. 현재 잠금 상태인지 확인
         if (lockout_start_time > 0) 
         {
             misop_flag = 1;
@@ -196,7 +179,7 @@ int main()
         }
 
 
-        // 2. "잠금" 상태가 아니라면, 정상 로직 수행 (새로운 오조작 감지 포함)
+        // 2. 잠금 상태가 아니라면, 정상 로직 수행 (새로운 오조작 감지)
         else{
             if (accel_detected)
             {
@@ -210,7 +193,7 @@ int main()
 
                     misop_flag = 1;
 
-                    lockout_start_time = current_time; // 3초 잠금 타이머 시작!
+                    lockout_start_time = current_time; // 3초 잠금 타이머 시작
                     thr_cmd = 0.0f; // 즉시 0%로 고정
                     playBuzzer();            
                     delay(200);
@@ -238,8 +221,7 @@ int main()
 
         if (brake_detected){
             if (delta_thr_raw >= 70.0f){
-                // Python 스크립트 실행 (상대경로 or 절대경로)
-                // system("python3 /home/pi/AIEmbedded/AIEmbedded/team_project/send_speed.py --speed 0");
+                system("python3 /home/pi/AIEmbedded/AIEmbedded/team_project/send_speed.py --speed 0");
                 playBuzzer();            
                 delay(200);
                 stopBuzzer();   
@@ -248,7 +230,6 @@ int main()
         
         }
         
-
 
         std::cout 
             << "Dist: " << distance 

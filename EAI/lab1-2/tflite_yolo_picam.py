@@ -5,36 +5,14 @@ import tflite_runtime.interpreter as tflite
 import RPi.GPIO as GPIO
 import time
 
-# # ===== GPIO Setup =====
-# BUZZER_PIN = 14
-# GPIO.setmode(GPIO.BCM)
-# GPIO.setup(BUZZER_PIN, GPIO.OUT)
-
-# print("Buzzer test (active type)")
-# GPIO.output(BUZZER_PIN, GPIO.HIGH)
-# time.sleep(0.5)
-# GPIO.output(BUZZER_PIN, GPIO.LOW)
 
 # ===== Constants =====
 IMG_SIZE = 416
 SCORE_THRESH = 0.2
 IOU_THRESH = 0.3
 
-# CAR_REGION = {
-#     "xmin": 68,
-#     "xmax": 290,
-#     "ymin": 198,
-#     "ymax": 405
-# }
-# CAR_REGION = {
-#     "xmin": 50,
-#     "xmax": 300,
-#     "ymin": 210,
-#     "ymax": 420
-# }
+
 ACCEL_REGION = {
-    # "xmin": 38,
-    # "ymin": 97,
     "xmin": 60,
     "ymin": 200,
     "xmax": 312,
@@ -125,19 +103,6 @@ labels = {i: n for i, n in enumerate([
 ])}
 
 cap = cv2.VideoCapture(0)
-# gst = (
-#     "libcamerasrc ! "
-#     "video/x-raw, width=1280, height=720, framerate=30/1 ! "  # 1. 일단 넓은 화면으로 가져옴
-#     "videoconvert ! "
-#     "videoscale ! "                                           # 2. 크기 조절 도구 추가
-#     "video/x-raw, width=640, height=480, format=BGR ! "       # 3. 여기서 640x480으로 줄임
-#     "appsink drop=true max-buffers=1 sync=false"
-# )
-
-
-# cap = cv2.VideoCapture(gst, cv2.CAP_GSTREAMER)
-
-# cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
 
 if not cap.isOpened():
     raise SystemExit("Camera not opened")

@@ -61,7 +61,6 @@ void LCD::lcd_display_string(const std::string& text, int line) {
     }
 }
 
-// ⭐ 추가된 상태 표시 함수
 void LCD::displayStatus(const std::string& line1, const std::string& line2) {
     lcd_clear();
     lcd_display_string(line1, 1);

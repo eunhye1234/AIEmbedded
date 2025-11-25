@@ -11,7 +11,6 @@ Ultrasonic::Ultrasonic(int trig_pin, int echo_pin)
     pinMode(echo_, INPUT);
     digitalWrite(trig_, LOW);
 
-    //-----------------
     // v_rel 초기화
     vrel_min = 9999.0f;
     vrel_max = -9999.0f;
@@ -34,13 +33,10 @@ float Ultrasonic::getDistance()
     const unsigned long timeout = 50000000; // 0.5 sec (약 171m)
     unsigned long start_time = micros();  //측정 시작 순간
 
-    // pinMode(TRIG, OUTPUT);   //초음파 발사하라고 신호 줌
-    // pinMode(ECHO, INPUT);   // high=초음파 발사, low=초음파 수신
 
     // Ensure trigger is LOW
     digitalWrite(trig_, LOW);
     delay(50);
-    // delayMicroseconds(5);
 
     // Send trigger pulse (10us)
     digitalWrite(trig_, HIGH);  
@@ -83,8 +79,6 @@ float Ultrasonic::getDistance()
     // Calculate distance in cm
     distance = static_cast<float>(RX_time - TX_time) * 0.017f;
 
-    // std::cout << "Range: " << distance << " cm" << std::endl;
-    // return true;
     return distance;
 }
 
@@ -144,9 +138,6 @@ float Ultrasonic::computeTTC(float distance_cm)
     }       
 
     float TTC = D_now / v_rel;
-
-    // if (TTC > 10.0f)    return TTC;
-    // return 10.0f;
 
     return TTC;
 }

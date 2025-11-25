@@ -17,7 +17,6 @@ public:
     void lcd_clear();
     void lcd_display_string(const std::string& text, int line);
 
-    // ⭐ 추가: 2줄 상태 표시
     void displayStatus(const std::string& line1, const std::string& line2);
 
     void backlight(int on);
