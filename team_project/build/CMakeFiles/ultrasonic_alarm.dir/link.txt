@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/ultrasonic_alarm.dir/main.cpp.o CMakeFiles/ultrasonic_alarm.dir/sensors/buzzer.cpp.o CMakeFiles/ultrasonic_alarm.dir/sensors/ultrasonic.cpp.o CMakeFiles/ultrasonic_alarm.dir/sensors/hall_sensor.cpp.o CMakeFiles/ultrasonic_alarm.dir/sensors/lcd.cpp.o -o ultrasonic_alarm  -Wl,-rpath,/usr/local/lib /usr/local/lib/libwiringPi.so 

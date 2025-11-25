@@ -1,3 +1,0 @@
-/home/pi/AIEmbedded/team_project/build/CMakeFiles/rebuild_cache.dir
-/home/pi/AIEmbedded/team_project/build/CMakeFiles/edit_cache.dir
-/home/pi/AIEmbedded/team_project/build/CMakeFiles/ultrasonic_alarm.dir
