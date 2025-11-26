@@ -1,0 +1,2 @@
+distance_cm,ttc,v_rel,voltage,raw_percent,cmd_percent,delta_thr_raw,scenario,accel_detected,brake_detected,accel_latency,misop_flag,gt_misop,dist_diff
+18.785,0.879439,0.0412304,2.0605900000000004,72.1172,20.0,27.5604,3,1,0,-1764150000.0,1,1,16.285999999999998

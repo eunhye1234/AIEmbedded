@@ -5,7 +5,7 @@ import numpy as np
 
 
 # 1. CSV 로드
-df = pd.read_csv("log.csv")
+df = pd.read_csv("log_test.csv")
 
 
 # 1-1. Inf / NaN 처리
@@ -132,5 +132,43 @@ if len(latency_list) > 0:
 else:
     print("\n===== Detection Latency =====")
     print("No accel→misop transition detected")
+
+
+# =========================================
+# TTC 단독 기준의 한계 분석
+# 3가지 조건 비교
+# =========================================
+df["dist_raw"] = df["distance_cm"].diff()    # 현재 - 이전
+
+# 급접근을 양수로 만들기 위해 부호 반전
+df["dist_diff"] = -df["dist_raw"]
+
+# 뒤로 움직여서 멀어지면(dist_diff < 0) 제거(0 처리)
+df.loc[df["dist_diff"] < 0, "dist_diff"] = 0
+
+df = df.drop(columns=["dist_raw"])
+
+cond_true_risk = df[(df["dist_diff"] >= 15) & (df["ttc"] <= 1.8)]
+cond_ttc_false_alarm = df[(df["dist_diff"] < 15) & (df["ttc"] <= 1.8)]
+cond_ttc_miss = df[(df["dist_diff"] >= 15) & (df["ttc"] > 1.8)]
+
+print("\n===== TTC 한계 분석 =====")
+
+print(f"① True Risk (dist_diff>=15 & ttc<=1.8): {len(cond_true_risk)} rows")
+print(f"   - misop_flag=1 비율: {cond_true_risk['misop_flag'].mean():.3f}")
+
+print(f"\n② TTC False Alarm (dist_diff<15 & ttc<=1.8): {len(cond_ttc_false_alarm)} rows")
+print(f"   - misop_flag=1 비율: {cond_ttc_false_alarm['misop_flag'].mean():.3f}")
+
+print(f"\n③ TTC Miss Case (dist_diff>=15 & ttc>1.8): {len(cond_ttc_miss)} rows")
+print(f"   - misop_flag=1 비율: {cond_ttc_miss['misop_flag'].mean():.3f}")
+
+# 원하면 CSV로 저장도 가능
+cond_true_risk.to_csv("true_risk.csv", index=False)
+cond_ttc_false_alarm.to_csv("ttc_false_alarm.csv", index=False)
+cond_ttc_miss.to_csv("ttc_miss.csv", index=False)
+
+print("\nSaved: true_risk.csv, ttc_false_alarm.csv, ttc_miss.csv")
+
 
 

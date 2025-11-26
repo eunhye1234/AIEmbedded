@@ -10,7 +10,7 @@ find_library(WIRINGPI_LIB wiringPi)
 
 # 실행 파일
 add_executable(ultrasonic_alarm
-    main.cpp
+    mispedal_main.cpp
     sensors/buzzer.cpp
     sensors/ultrasonic.cpp
     sensors/hall_sensor.cpp
