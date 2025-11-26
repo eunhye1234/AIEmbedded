@@ -12,9 +12,15 @@ SCORE_THRESH = 0.2
 IOU_THRESH = 0.3
 
 
+# ACCEL_REGION = {
+#     "xmin": 60,
+#     "ymin": 205,
+#     "xmax": 312,
+#     "ymax": 400
+# }
 ACCEL_REGION = {
     "xmin": 60,
-    "ymin": 200,
+    "ymin": 260,
     "xmax": 312,
     "ymax": 400
 }
@@ -26,14 +32,24 @@ BRAKE_REGION = {
     "ymax": 211
 }
 
+# def is_in_region(box, region):
+#     ymin, xmin, ymax, xmax = box
+#     return (
+#         xmin >= region["xmin"] and
+#         xmax <= region["xmax"] and
+#         ymin >= region["ymin"] and
+#         ymax <= region["ymax"]
+#     )
+
 def is_in_region(box, region):
     ymin, xmin, ymax, xmax = box
+    x_center = (xmin + xmax) / 2
+    y_center = (ymin + ymax) / 2
     return (
-        xmin >= region["xmin"] and
-        xmax <= region["xmax"] and
-        ymin >= region["ymin"] and
-        ymax <= region["ymax"]
+        region["xmin"] <= x_center <= region["xmax"] and
+        region["ymin"] <= y_center <= region["ymax"]
     )
+
 
 # ===== IoU & NMS =====
 def iou(b1, b2):

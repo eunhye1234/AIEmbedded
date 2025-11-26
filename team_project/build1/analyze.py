@@ -3,23 +3,17 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import numpy as np
 
-# -------------------------------
+
 # 1. CSV 로드
-# -------------------------------
-df = pd.read_csv("log_test.csv")
+df = pd.read_csv("log.csv")
 
-# -------------------------------
+
 # 1-1. Inf / NaN 처리
-# -------------------------------
 df["ttc"] = df["ttc"].replace([np.inf, -np.inf], np.nan)
-df = df.dropna(subset=["ttc"])      # TTC가 없는 row는 제거
+df = df.dropna(subset=["ttc"])      # TTC가 없는 row 제거
 
-# 또는 아래처럼 처리 가능 (원하면 조정 가능)
-# df["ttc"] = df["ttc"].clip(upper=5.0)
 
-# -------------------------------
-# 2. 시나리오별 성능 분석
-# -------------------------------
+# 2. 시나리오별 통계
 scenarios = df["scenario"].unique()
 
 print("===== Scenario-based Statistics =====")
@@ -33,57 +27,110 @@ for sc in scenarios:
     print("Mean delta_thr_raw:", subset["delta_thr_raw"].mean())
     print("Misop flag ratio:", subset["misop_flag"].mean())
 
-        # 🔥 시나리오별 accel_detected 비율
+    # 시나리오별 accel_detected 비율
     if "accel_detected" in subset.columns:
         accel_ratio = subset["accel_detected"].mean()
         print("Accel detected ratio:", accel_ratio)
 
-# -------------------------------
-# 🔥 2-1. 전체 accel_detected 비율 출력
-# -------------------------------
+
+# 전체 accel_detected 비율
 if "accel_detected" in df.columns:
     overall_accel_ratio = df["accel_detected"].mean()
     print("\n===== Overall accel_detected statistics =====")
     print(f"Overall accel_detected ratio: {overall_accel_ratio:.4f}")
 
-# -------------------------------
+
 # 3. Ground Truth 생성
-# -------------------------------
 def make_ground_truth(row):
+    # 시나리오 2,3 = 오조작 상황 (실험설정)
     if row["scenario"] in [2, 3]:
-        return 1  # true misoperation
+        return 1
     return 0
 
 df["gt_misop"] = df.apply(make_ground_truth, axis=1)
 
-# -------------------------------
-# 4. Confusion Matrix 출력
-# -------------------------------
-y_true = df["gt_misop"]
-y_pred = df["misop_flag"]
 
-cm = confusion_matrix(y_true, y_pred, labels=[0,1])
-print("\n===== Confusion Matrix (misop_flag vs ground truth) =====")
-print(cm)
+# 4. 거리 변화량 dist_diff 생성
+df["dist_diff"] = df["distance_cm"].diff().abs()
 
-# -------------------------------
-# 5. TTC 히스토그램
-# -------------------------------
-plt.hist(df["ttc"], bins=40, color='blue', alpha=0.7)
-plt.title("TTC Distribution")
-plt.xlabel("TTC (sec)")
-plt.ylabel("Count")
-plt.savefig("ttc_hist.png")
-plt.clf()
 
-# -------------------------------
-# 6. v_rel 히스토그램
-# -------------------------------
-plt.hist(df["v_rel"], bins=40, color='green', alpha=0.7)
-plt.title("Relative Speed (v_rel) Distribution")
-plt.xlabel("v_rel (m/s)")
-plt.ylabel("Count")
-plt.savefig("vrel_hist.png")
-plt.clf()
+# 4-1. 필터링 조건
+filtered = df[(df["dist_diff"] >= 15) & (df["ttc"] <= 1.8)]
 
-print("\nSaved plots: ttc_hist.png, vrel_hist.png")
+print("\n===== Filtered Rows Statistics =====")
+print(f"Total filtered samples: {len(filtered)}")
+
+
+# 4-2. Confusion Matrix (Filtered)
+if len(filtered) > 0:
+    y_true = filtered["gt_misop"]
+    y_pred = filtered["misop_flag"]
+
+    cm = confusion_matrix(y_true, y_pred, labels=[0,1])
+    print("\n===== Confusion Matrix (Filtered Rows) =====")
+    print(cm)
+else:
+    print("No rows satisfy the filter conditions (dist_diff>=15 & ttc<=1.8)")
+
+
+# 5. 전체 misop_flag=1 비율
+overall_misop_ratio = df["misop_flag"].mean()
+print("\n===== Overall misop_flag ratio =====")
+print(f"전체 데이터에서 misop_flag=1 비율: {overall_misop_ratio:.4f}")
+
+
+# 6. 필터링 조건에서 misop_flag=1 비율
+if len(filtered) > 0:
+    filtered_misop_ratio = filtered["misop_flag"].mean()
+    print("\n===== Filtered misop_flag ratio =====")
+    print(f"dist_diff>=15 & ttc<=1.8 조건에서 misop_flag=1 비율: {filtered_misop_ratio:.4f}")
+else:
+    print("\n===== Filtered misop_flag ratio =====")
+    print("필터 조건을 만족하는 row가 없습니다.")
+
+
+
+# =========================================
+# False Positive Rate (정상 가속 조건 기반)
+# TTC >= 3  AND  dist_diff >= 6
+# =========================================
+# normal_cond = df[(df["ttc"] >= 3.0) & (df["dist_diff"] >= 6)]
+normal_cond = df[(df["ttc"] >= 1.8)]
+
+FP = len(normal_cond[normal_cond["misop_flag"] == 1])
+TN = len(normal_cond[normal_cond["misop_flag"] == 0])
+
+if (FP + TN) > 0:
+    FPR = FP / (FP + TN)
+else:
+    FPR = 0
+
+print("\n===== False Positive Rate (정상 가속 조건 기준) =====")
+print(f"False Positive Rate(FPR): {FPR:.4f}")
+print(f"FP: {FP}, TN: {TN}")
+print(f"Total normal samples: {len(normal_cond)}")
+
+
+
+# =========================================
+# Detection Latency 계산
+# =========================================
+latency_list = []
+
+# accel_detected 이후 misop_flag가 최초 1 되는 구간 탐색
+for idx in df.index:
+    if df.loc[idx, "accel_detected"] == 1 and df.loc[idx, "misop_flag"] == 1:
+        latency = df.loc[idx, "accel_latency"]
+        latency_list.append(latency)
+
+# 결과 출력
+if len(latency_list) > 0:
+    avg_latency = np.mean(latency_list)
+    print("\n===== Detection Latency =====")
+    print(f"Average latency: {avg_latency:.4f} sec")
+    print(f"Samples: {len(latency_list)}")
+else:
+    print("\n===== Detection Latency =====")
+    print("No accel→misop transition detected")
+
+

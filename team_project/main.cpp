@@ -54,7 +54,7 @@ int main()
     std::ofstream logFile("log.csv", std::ios::out);
 
     if (logFile.tellp() == 0) {
-       logFile << "distance_cm,ttc,v_rel,voltage,raw_percent,cmd_percent,delta_thr_raw,scenario,accel_detected,brake_detected,misop_flag\n";
+       logFile << "distance_cm,ttc,v_rel,voltage,raw_percent,cmd_percent,delta_thr_raw,scenario,accel_detected,brake_detected,accel_latency,misop_flag\n";
    }
 
     float prev_thr_raw = 0.0f;
@@ -108,36 +108,38 @@ int main()
 
         bool accel_detected = false;
         bool brake_detected = false;
-        // // YOLO flag check
+        double latency = -1;
+        // ====== YOLO flag check
+        
+        // BRAKE 체크
+        std::ifstream brakeFile("/tmp/brake_detected.flag");
+        if (brakeFile.good()) {
+            double ts;
+            brakeFile >> ts;
+            double now = millis() / 1000.0;
+
+            // if (now - ts <= 1.5) {
+            brake_detected = true;
+            std::cout << ">>> BRAKE detected\n";
+            // }
+
+            system("rm /tmp/brake_detected.flag");
+        }
+        
         // ACCEL 체크  
         std::ifstream accelFile("/tmp/accel_detected.flag");
-
-        // BRAKE 체크
-        {
-            std::ifstream brakeFile("/tmp/brake_detected.flag");
-            if (brakeFile.good()) {
-                double ts;
-                brakeFile >> ts;
-                double now = millis() / 1000.0;
-
-                if (now - ts <= 1.5) {
-                    brake_detected = true;
-                    std::cout << ">>> BRAKE detected\n";
-                }
-
-                system("rm /tmp/brake_detected.flag");
-            }
-        }
-
         if (accelFile.good()) 
         {
             double ts;
             accelFile >> ts;
+
             double now = millis() / 1000.0;
-            if (now - ts <= 1.5) {     // 최근 1.5초 이내 감지
-                    accel_detected = true;
-                    std::cout << ">>> ACCEL detected\n";
-                }
+            latency = now - ts;
+            std::cout << "ACCEL flag latency: " << latency << " sec\n";
+            // if (now - ts <= 1.5) {     // 최근 1.5초 이내 감지
+            accel_detected = true;
+            std::cout << ">>> ACCEL detected\n";
+                // }
             // 파일 삭제해서 중복 감지 방지
             std::system("rm /tmp/accel_detected.flag");
 
@@ -255,10 +257,15 @@ int main()
         << delta_thr_raw << ","
         << scenario_id << ","
         << accel_detected << ","      
-        << brake_detected << ","      
+        << brake_detected << "," 
+        << latency << ","     
         << misop_flag << "\n";
 
-    logFile.flush();
+        logFile.flush();
+        // if (brakeFile.good()) system("rm /tmp/brake_detected.flag");
+
+        
+        // if (accelFile.good()) std::system("rm /tmp/accel_detected.flag");
 
         prev_thr_raw = thr_raw;
 
